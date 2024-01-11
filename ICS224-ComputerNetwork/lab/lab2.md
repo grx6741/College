@@ -266,6 +266,24 @@ Through cable.
     Internet Address      Physical Address      Type
     192.168.1.1           0003.e417.84ee        dynamic
     ```
+  - `arp -a` from PC-C
+    ```console
+    C:\>arp -a
+    Internet Address      Physical Address      Type
+    192.168.1.1           0003.e417.84ee        dynamic
+    ```
+  - `arp -a` from PC-D
+    ```console
+    C:\>arp -a
+    Internet Address      Physical Address      Type
+    192.168.1.1           0003.e417.84ee        dynamic
+    ```
+  - `arp -a` from PC-E
+    ```console
+    C:\>arp -a
+    Internet Address      Physical Address      Type
+    192.168.1.1           0003.e417.84ee        dynamic
+    ```
     
   - MAC address from Switch
     ```console
