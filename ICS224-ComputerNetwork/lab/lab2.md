@@ -193,15 +193,25 @@ Through cable.
 ## Exercise 3
 
 ## Aim
+To establish the connection between five devices with one switch through Copper Straight
+Through cable.
 
 ## Requirements
+- Cisco Packet Tracer 8.2.1
+- Windows PC or 5 Linux PC, Each PC must Have One NIC cards.
+- RJ-45 Sockets – Copper Cross-over Wire.
+- Class C IP Address using Static IP configuration.
+- 2969-24TT switch
 
 ## Physical Connections
 
 ![image](https://github.com/grx6741/College/assets/73749042/e51224ee-fbbd-414b-a49d-7a9245188a6e)
 
-
 ## Procedure
+- Open the CISCO PACKET TRACER software.
+- Use 5 PC from the End Device Icons. (Change Names PC0 to PC-A, PC1 to PC-B)
+- Use 2960-24TT switch
+- Make connection from all PCs to switch over fastethernet0/1
 
 ## Observation
 
