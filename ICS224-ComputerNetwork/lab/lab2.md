@@ -4,7 +4,7 @@
 - Batch: 3
 - IP addr: `192.168.10.1`
 - MAC addr: `00:09:0f:09:00:12`
-- Date: Thursday 11 January 2024 03:26:23 PM IST
+- Date: `Thursday 11 January 2024 03:26:23 PM IST`
 
 ## Exercise 1
 
