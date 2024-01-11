@@ -27,6 +27,8 @@ tracer
 - Make the Connections using Copper Cross-over Ethernet Cable.
 - Enter the IP Address to each machine
 
+<div style="page-break-after: always;"></div>
+
 ### Observation
 - ipconfig command
 
