@@ -1,4 +1,8 @@
-![image](https://github.com/grx6741/College/assets/73749042/c3f85b68-6bb7-415c-8fd3-25976d793f01)- IP addr: `192.168.10.1`
+# Lab-2: Cisco Packet Tracer: Basic Connection Establishment - Part-1
+- Name: Gowrish I
+- Roll No: 2022BCS0155
+- Batch: 3
+- IP addr: `192.168.10.1`
 - MAC addr: `00:09:0f:09:00:12`
 - Date: Thursday 11 January 2024 03:26:23 PM IST
 
