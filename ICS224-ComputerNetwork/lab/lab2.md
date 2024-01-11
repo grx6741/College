@@ -265,5 +265,42 @@ Through cable.
     C:\>arp -a
     Internet Address      Physical Address      Type
     192.168.1.1           0003.e417.84ee        dynamic
+    ```
+    
+  - MAC address from Switch
+    ```console
+      %LINK-3-UPDOWN: Interface FastEthernet0/1, changed state to down
 
+      %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to down
+      
+      %LINK-5-CHANGED: Interface FastEthernet0/1, changed state to up
+      
+      %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to up
+      
+      %LINK-5-CHANGED: Interface FastEthernet0/3, changed state to up
+      
+      %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/3, changed state to up
+      
+      %LINK-5-CHANGED: Interface FastEthernet0/4, changed state to up
+      
+      %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/4, changed state to up
+      
+      %LINK-5-CHANGED: Interface FastEthernet0/5, changed state to up
+      
+      %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/5, changed state to up
+      
+      
+      Switch>enable
+      Switch#show mac-address-table
+                Mac Address Table
+      -------------------------------------------
+      
+      Vlan    Mac Address       Type        Ports
+      ----    -----------       --------    -----
+      
+         1    0001.63e6.e3ee    DYNAMIC     Fa0/3
+         1    0003.e417.84ee    DYNAMIC     Fa0/1
+         1    000a.4166.40bd    DYNAMIC     Fa0/5
+         1    0030.a3b0.2052    DYNAMIC     Fa0/2
+         1    00e0.8f45.a92e    DYNAMIC     Fa0/4
     ```
