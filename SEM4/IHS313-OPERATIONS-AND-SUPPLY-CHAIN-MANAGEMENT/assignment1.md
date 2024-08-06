@@ -26,7 +26,7 @@ The Painting step takes the longest time at 20 minutes. Hence, it is the bottlen
   - No Rework or Defects: All toys are processed perfectly without requiring any rework or additional checks beyond the standard inspection and packing.
 
 ```mermaid
-floawchart TD
+flowchart TD
     A["Step 1: Preparation of toys"]
     B["Step 2: Pre-treatment"]
     C["Step 3: Painting"]
