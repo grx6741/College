@@ -40,10 +40,10 @@ graph TD;
     D-->E;
     E-->End;
 
-    A-.->8 minutes;
-    B-.->"12 minutes";
-    C-.->"20 minutes";
-    D-.->"10 minutes";
-    E-.->"5 minutes";
+    A-.->8min;
+    B-.->12min;
+    C-.->20min;
+    D-.->10min;
+    E-.->5min;
 
 ```
