@@ -37,6 +37,13 @@ graph TD;
     A-->B;
     B-->C;
     C-->D;
-    D-->End;
+    D-->E;
+    E-->End;
+
+    A-.->"8 minutes"
+    B-.->"12 minutes"
+    C-.->"20 minutes"
+    D-.->"10 minutes"
+    E-.->"5 minutes"
 
 ```
