@@ -1,6 +1,6 @@
 # IHS 313 Supply chain and Operations Management
 
-## HARSH VARDHAN CHOUHAN 2022BCD0044
+## Gowrish I 2022BCS0155
 
 ### Process Flow Diagram
 
