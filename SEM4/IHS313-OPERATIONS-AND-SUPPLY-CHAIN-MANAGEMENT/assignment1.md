@@ -1,6 +1,6 @@
 # IHS 313 Supply chain and Operations Management
 
-## Gowrish I 2022BCS0155
+## HARSH VARDHAN CHOUHAN 2022BCD0044
 
 ### Process Flow Diagram
 
@@ -46,5 +46,4 @@ flowchart TD
         C-.-20min;
         D-.-10min;
         E-.-5min;
-
 ```
