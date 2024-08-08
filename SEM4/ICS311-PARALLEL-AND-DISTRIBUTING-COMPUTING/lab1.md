@@ -167,6 +167,6 @@ sys	0m0.001s
 #### Results
 
 | Execution | Time in ms |
--------------------------
+------------|------------
 | Sequential| 2.600      |
 | Parallel  | 0.045      |
