@@ -1,5 +1,5 @@
 - Program 1
-  ```cpp
+```cpp
   #include <iostream>
 #include <vector>
 #include <chrono>
@@ -85,4 +85,4 @@ int main()
     std::vector<int> sorted_arr = seq_bubble_sort(arr);
     timer.end();
 }
-  ```
+```
