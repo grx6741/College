@@ -257,6 +257,9 @@ int main()
 {
     Timer timer;
     std::vector<int> sizes = {10, 100, 1000, 10000, 50000};
+
+    std::cout << "Using " << omp_get_max_threads() << " Threads" << std::endl;
+
     for (int i = 0; i < sizes.size(); i++) {
 	    int size = sizes[i];
 	    std::vector<int> arr(size);
@@ -279,6 +282,17 @@ int main()
 	        std::cout << t1 << "\t" << t2 << std::endl;
     }
 }
+```
+
+#### Output
+
+```console
+Using 12 Threads
+[SIZE: 10]	    1.412e-06	0.000947931
+[SIZE: 100]	    8.7889e-05	0.000698251
+[SIZE: 1000]	0.00771212	0.00669482
+[SIZE: 10000]	0.739259	0.134833
+[SIZE: 50000]	19.1999	    5.33304
 ```
 
 #### Benchmark
@@ -356,6 +370,9 @@ double parallel_integrate(const std::function<double(double)>& generator, double
 int main() {
     Timer timer;
     std::vector<double> dx_values = {1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8};
+
+    std::cout << "Using " << omp_get_max_threads() << " Threads" << std::endl;
+
     for (int i = 0; i < dx_values.size(); i++) {
         double dx = dx_values[i];
 
@@ -370,6 +387,21 @@ int main() {
         std::cout << dx << "\t" << pi_seq << "\t" << t1 << "\t" << pi_par << "\t" << t1 << std::endl;
     }
 }
+```
+
+#### Output
+
+```console
+Using 12 Threads
+1       4       3.61e-07        4       0.000721069
+0.1     3.23993 8.01e-07        3.23993 1.7284e-05
+0.01    3.15158 4.148e-06       3.15158 1.3746e-05
+0.001   3.14259 4.1681e-05      3.14259 1.7564e-05
+0.0001  3.14169 0.000381284     3.14169 0.000129139
+1e-05   3.14158 0.00382948      3.14158 0.000351958
+1e-06   3.14159 0.0289401       3.14159 0.00541477
+1e-07   3.14159 0.27464         3.14159 0.0383328
+1e-08   3.14159 2.73214         3.14159 0.397813
 ```
 
 #### Benchmark
