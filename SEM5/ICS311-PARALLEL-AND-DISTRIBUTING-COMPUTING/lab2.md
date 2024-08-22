@@ -1,6 +1,6 @@
-# LAB 1
+# Gowrish I 2022BCS0155
 
-## Gowrish I 2022BCS0155
+# LAB 1
 
 ### Write OpenMP program in C to parallelize bubble sort
 
