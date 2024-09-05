@@ -417,3 +417,770 @@ Using 12 Threads
 | 1e-06                | 3.14159         | 0.0290141           |    3.14159     | 0.00671049        |
 | 1e-07                | 3.14159         | 0.274438            |    3.14159     | 0.00671049        |
 | 1e-08                | 3.14159         | 2.74175             |    3.14159     | 0.387032          |
+
+# LAB 3
+
+### Program 1
+
+Write an OpenMP program with C++ that estimates the value of pi (𝜋) using a following function and apply Simpson’s 1/3 rd rule.
+
+$Area=\int_{b}^{a}f(x)dx, where f(x)=\frac{4}{1+x^2} , a=0,b=1,n=100,500,1000$
+
+#### Simpson's Rule
+
+$\int_{b}^{a}f(x)dx \cong \frac{b-a}{3n}\left[ f(x_{0}) +4\cdot\sum_{i=1;i=odd}^{n-1}f(x_{i}+2\cdot\sum_{i=2;i=even}^{n-1}f(x_{i})+f(x_{n}) \right]$
+
+The following components are to be shown
+
+1. Write the serial version program to estimate the value of pi (𝜋). Test the result with classical integration value. Calculate the execution time by using the library function omp_get_wtime().
+
+    __Code__
+    
+    ```cpp
+    #include <iostream>
+    #include <functional>
+    #include <cstdint>
+    #include <cstdio>
+    #include <string>
+    #include <omp.h>
+    #include <iomanip>
+    
+    typedef std::function<double(double)> Generator;
+    
+    class Timer {
+    public:
+        Timer() {
+    	this->reset();
+        }
+    
+        void reset() {
+    	m_Time = omp_get_wtime();
+        }
+    
+        double elapsed() {
+    	double now = omp_get_wtime();
+    	return now - m_Time;
+        }
+    
+        void log(std::string msg) {
+    	double time = this->elapsed();
+    	std::cout << "[TIMER] " 
+    		  << msg << " : " 
+    		  << time
+    		  << "s" << std::endl;
+        }
+    private:
+        double m_Time;
+    };
+    
+    double simpson_rule_serial(double start, double end, Generator generator, uint32_t precision)
+    {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+    	return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        // First Term
+        sum += generator(x(0));
+    
+        // Odd sum
+        double odd_sum = 0.0F;
+        for (uint32_t i = 1; i <= precision - 1; i += 2) {
+    	odd_sum += generator(x(i));
+        }
+        sum += 4.0 * odd_sum;
+    
+        // Even sum
+        double even_sum = 0.0F;
+        for (uint32_t i = 2; i <= precision - 2; i += 2) {
+    	even_sum += generator(x(i));
+        }
+        sum += 2.0 * even_sum;
+    
+        // Last Term
+        sum += generator(x(precision));
+    
+        // Final Multiplier
+        sum *= spacing / 3;
+    
+        return sum;
+    }
+    
+    
+    int identify_machine()
+    {
+        printf("Detected %d Processor(s)\n", omp_get_num_procs());
+        printf("Max %d Threads(s) Available\n", omp_get_max_threads());
+    
+        int thread_count = -1;
+        while (!(0 < thread_count && thread_count <= omp_get_max_threads())) {
+    	std::cout << "Enter number of threads to use: ";
+    	std::cin >> thread_count;
+    	if (0 < thread_count && thread_count <= omp_get_max_threads()) {
+    	    omp_set_num_threads(thread_count);
+    	    break;
+    	} else {
+    	    std::cout << "Invalid thread count entered " << thread_count << std::endl;
+    	}
+        }
+        return thread_count;
+    }
+    
+    int main()
+    {
+        Timer timer;
+        auto pi_function = [](double x) {
+    	return 4 / (double)(1 + x * x);
+        };
+    
+        int thread_count = identify_machine();
+    
+        printf("Using %d threads...\n", thread_count);
+    
+        uint32_t precision = 1e8;
+    
+        timer.reset();
+        double pi_serial = simpson_rule_serial(0, 1, pi_function, precision);
+        std::cout << "PI in serial = " 
+    	      << std::setprecision(15)
+    	      << pi_serial 
+    	      << std::endl;
+        timer.log("Serial execution took");
+    }
+    ```
+    
+    __Output__
+    
+    ```console
+    Detected 12 Processor(s)
+    Max 12 Threads(s) Available
+    Enter number of threads to use: 12
+    Using 12 threads...
+    PI in serial = 3.14159265358944
+    [TIMER] Serial execution took : 2.81654947599964s
+    ```
+
+2. Write the parallel version program to estimate the same. Test the result with classical integration value and by (a). It includes number of threads involved and the area calculated by which thread number. Calculate the execution time by using the library function omp_get_wtime().
+
+    __Code__
+    
+    ```cpp
+    #include <iostream>
+    #include <functional>
+    #include <cstdint>
+    #include <cstdio>
+    #include <string>
+    #include <omp.h>
+    #include <iomanip>
+    
+    typedef std::function<double(double)> Generator;
+    
+    class Timer {
+    public:
+        Timer() {
+    	this->reset();
+        }
+    
+        void reset() {
+    	m_Time = omp_get_wtime();
+        }
+    
+        double elapsed() {
+    	double now = omp_get_wtime();
+    	return now - m_Time;
+        }
+    
+        void log(std::string msg) {
+    	double time = this->elapsed();
+    	std::cout << "[TIMER] " 
+    		  << msg << " : " 
+    		  << time
+    		  << "s" << std::endl;
+        }
+    private:
+        double m_Time;
+    };
+    
+    double simpson_rule_parallel(double start, double end, Generator generator, uint32_t precision) {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+    	return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        // First Term
+        sum += generator(x(0));
+    
+        // Odd sum
+        double odd_sum = 0.0F;
+        double even_sum = 0.0F;
+    
+        #pragma omp parallel shared(precision, sum)
+        {
+    	#pragma omp for reduction( + : odd_sum )
+    	for (uint32_t i = 1; i <= precision - 1; i += 2) {
+    	    odd_sum += generator(x(i));
+    	}
+    
+    	#pragma omp for reduction( + : even_sum )
+    	for (uint32_t i = 2; i <= precision - 2; i += 2) {
+    	    even_sum += generator(x(i));
+    	}
+        }
+    
+        sum += 4.0 * odd_sum + 2.0 * even_sum;
+    
+        // Last Term
+        sum += generator(x(precision));
+    
+        // Final Multiplier
+        sum *= spacing / 3;
+    
+        return sum;
+    }
+    
+    double simpson_rule_serial(double start, double end, Generator generator, uint32_t precision)
+    {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+    	return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        // First Term
+        sum += generator(x(0));
+    
+        // Odd sum
+        double odd_sum = 0.0F;
+        for (uint32_t i = 1; i <= precision - 1; i += 2) {
+    	odd_sum += generator(x(i));
+        }
+        sum += 4.0 * odd_sum;
+    
+        // Even sum
+        double even_sum = 0.0F;
+        for (uint32_t i = 2; i <= precision - 2; i += 2) {
+    	even_sum += generator(x(i));
+        }
+        sum += 2.0 * even_sum;
+    
+        // Last Term
+        sum += generator(x(precision));
+    
+        // Final Multiplier
+        sum *= spacing / 3;
+    
+        return sum;
+    }
+    
+    
+    int identify_machine()
+    {
+        printf("Detected %d Processor(s)\n", omp_get_num_procs());
+        printf("Max %d Threads(s) Available\n", omp_get_max_threads());
+    
+        int thread_count = -1;
+        while (!(0 < thread_count && thread_count <= omp_get_max_threads())) {
+    	std::cout << "Enter number of threads to use: ";
+    	std::cin >> thread_count;
+    	if (0 < thread_count && thread_count <= omp_get_max_threads()) {
+    	    omp_set_num_threads(thread_count);
+    	    break;
+    	} else {
+    	    std::cout << "Invalid thread count entered " << thread_count << std::endl;
+    	}
+        }
+        return thread_count;
+    }
+    
+    int main()
+    {
+        Timer timer;
+        auto pi_function = [](double x) {
+    	return 4 / (double)(1 + x * x);
+        };
+    
+        int thread_count = identify_machine();
+    
+        printf("Using %d threads...\n", thread_count);
+    
+        uint32_t precision = 1e8;
+    
+        timer.reset();
+        double pi_serial = simpson_rule_serial(0, 1, pi_function, precision);
+        std::cout << "PI in serial = " 
+    	      << std::setprecision(15)
+    	      << pi_serial 
+    	      << std::endl;
+        timer.log("Serial execution took");
+    
+        timer.reset();
+        double pi_parallel = simpson_rule_parallel(0, 1, pi_function, precision);
+        std::cout << "PI in parallel = " 
+    	      << std::setprecision(15)
+    	      << pi_parallel 
+    	      << std::endl;
+        timer.log("Parallel execution took");
+    }
+    ```
+    
+    __Output__
+    
+    ```console
+    Detected 12 Processor(s)
+    Max 12 Threads(s) Available
+    Enter number of threads to use: 5
+    Using 5 threads...
+    PI in serial = 3.14159265358944
+    [TIMER] Serial execution took : 2.75547154200103s
+    PI in parallel = 3.14159265358966
+    [TIMER] Parallel execution took : 0.62808093700005s
+    ```
+
+3. Identify the line of statement which leads the race condition. Race condition occurs when the multiple threads accessing a shared variable. If it exists how will you handle this problem? Use appropriate OpenMP clauses such as critical, atomic, ordered, Sections and find the solution. Test the result with classical integration value and by (a) and (b). Calculate the execution time for critical, atomic, ordered, Sections clauses by using the library function omp_get_wtime().
+
+    ```cpp
+    double simpson_rule_parallel_critical(double start, double end, Generator generator, uint32_t precision) {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+            return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        #pragma omp parallel shared(precision, sum)
+        {
+            #pragma omp for
+            for (uint32_t i = 1; i <= precision - 1; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp critical
+                {
+                    sum += 4.0 * temp;
+                }
+            }
+    
+            #pragma omp for
+            for (uint32_t i = 2; i <= precision - 2; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp critical
+                {
+                    sum += 2.0 * temp;
+                }
+            }
+        }
+    
+        sum += generator(x(0)) + generator(x(precision));
+        sum *= spacing / 3.0;
+    
+        return sum;
+    }
+    
+    double simpson_rule_parallel_atomic(double start, double end, Generator generator, uint32_t precision) {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+            return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        #pragma omp parallel shared(precision, sum)
+        {
+            #pragma omp for
+            for (uint32_t i = 1; i <= precision - 1; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp atomic
+                sum += 4.0 * temp;
+            }
+    
+            #pragma omp for
+            for (uint32_t i = 2; i <= precision - 2; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp atomic
+                sum += 2.0 * temp;
+            }
+        }
+    
+        sum += generator(x(0)) + generator(x(precision));
+        sum *= spacing / 3.0;
+    
+        return sum;
+    }
+    
+    double simpson_rule_parallel_ordered(double start, double end, Generator generator, uint32_t precision) {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+            return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        #pragma omp parallel shared(precision, sum)
+        {
+            #pragma omp for ordered
+            for (uint32_t i = 1; i <= precision - 1; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp ordered
+                sum += 4.0 * temp;
+            }
+    
+            #pragma omp for ordered
+            for (uint32_t i = 2; i <= precision - 2; i += 2) {
+                double temp = generator(x(i));
+                #pragma omp ordered
+                sum += 2.0 * temp;
+            }
+        }
+    
+        sum += generator(x(0)) + generator(x(precision));
+        sum *= spacing / 3.0;
+    
+        return sum;
+    }
+    
+    double simpson_rule_parallel(double start, double end, Generator generator, uint32_t precision) {
+        double spacing = ((end - start) / (double)precision);
+        auto x = [start, spacing](uint32_t index) {
+    	return start + index * spacing;
+        };
+    
+        double sum = 0.0F;
+    
+        // First Term
+        sum += generator(x(0));
+    
+        // Odd sum
+        double odd_sum = 0.0F;
+        double even_sum = 0.0F;
+    
+        #pragma omp parallel shared(precision, sum)
+        {
+    	#pragma omp for reduction( + : odd_sum )
+    	for (uint32_t i = 1; i <= precision - 1; i += 2) {
+    	    odd_sum += generator(x(i));
+    	}
+    
+    	#pragma omp for reduction( + : even_sum )
+    	for (uint32_t i = 2; i <= precision - 2; i += 2) {
+    	    even_sum += generator(x(i));
+    	}
+        }
+    
+        sum += 4.0 * odd_sum + 2.0 * even_sum;
+    
+        // Last Term
+        sum += generator(x(precision));
+    
+        // Final Multiplier
+        sum *= spacing / 3;
+    
+        return sum;
+    }
+    ```
+    
+    __Output__
+    
+    ```console
+    Detected 12 Processor(s)
+    Max 12 Threads(s) Available
+    Enter number of threads to use: 10
+    Using 10 threads...
+    PI in serial = 3.14159265358944
+    [TIMER] Serial execution took : 2.77507608699852s
+    PI in parallel (critical) = 3.14159265359004
+    [TIMER] Parallel (critical) execution took : 14.4866989049988s
+    PI in parallel (atomic) = 3.14159265358992
+    [TIMER] Parallel (atomic) execution took : 3.20636564099914s
+    PI in parallel (ordered) = 3.14159265358995
+    [TIMER] Parallel (ordered) execution took : 3.4326813610005s
+    PI in parallel (reduction) = 3.14159265358981
+    [TIMER] Parallel (reduction) execution took : 0.608498552999663s
+    ```
+
+#### Results
+
+| Execution Type       | Calculated PI value | Time Taken in seconds |
+|----------------------|---------------------|-----------------------|
+| Serial               |  3.14159265358944   | 2.66738621900004      |
+|Parallel (Critical)   |  3.14159265359018   | 19.2036709250006     |
+|Parallel (Atomic)     | 3.14159265359035    | 3.82193632400049     |
+|Parallel (Ordered)    | 3.14159265358995    | 3.47913229900041     |
+|Parallel (Reduction)  | 3.14159265358984    | 0.745230704000278    |
+
+### Program 2
+
+Write an openMP program with C++ that illustrates the following OpenMP clause with its various types.
+
+schedule clause: It allows to specify how the iterations of the loop should be scheduled, i.e., allocated to threads. The various types of schedule are as follows.
+
+- Write an openMP program with C++ that calculate the sum of the first N natural numbers using for loop. (Serial Version) Try the following on parallel version of the code.
+
+    __Code__
+
+    ```cpp
+    #include <iostream>
+    #include <omp.h>
+    
+    class Timer {
+    public:
+        Timer() {
+    	this->reset();
+        }
+    
+        void reset() {
+    	m_Time = omp_get_wtime();
+        }
+    
+        double elapsed() {
+    	double now = omp_get_wtime();
+    	return now - m_Time;
+        }
+    
+        void log(std::string msg) {
+    	double time = this->elapsed();
+    	std::cout << "[TIMER] " 
+    		  << msg << " : " 
+    		  << time
+    		  << "s" << std::endl;
+        }
+    private:
+        double m_Time;
+    };
+    
+    uint64_t sum_all(uint64_t n) {
+        uint64_t sum = 0;
+        for (uint64_t i = 0; i < n; i++) {
+    	sum += i;
+        }
+        return sum;
+    }
+    
+    int main() {
+        Timer timer;
+    
+        timer.reset();
+        sum_all(1e9);
+        timer.log("Serial execution took ");
+    }
+    ```
+    
+    __Output__
+
+    ```console
+    [TIMER] Serial execution took  : 1.41841s
+    ```
+- schedule (static), schedule (static, C) where C – number of chunks to tasks. Each chunk contains C contiguous iterations.
+
+    ```cpp
+    uint64_t sum_all_static(uint64_t n) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(static)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    uint64_t sum_all_static_chunk(uint64_t n, int chunk_size) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(static, chunk_size)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+    ```
+- schedule (dynamic), schedule (dynamic, C)
+
+    ```cpp
+    uint64_t sum_all_dynamic(uint64_t n) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(dynamic)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    uint64_t sum_all_dynamic_chunk(uint64_t n, int chunk_size) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(dynamic, chunk_size)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+    ```
+- schedule (guided), schedule (guided, C)
+
+    ```cpp
+    uint64_t sum_all_guided(uint64_t n) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(guided)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+    
+    uint64_t sum_all_guided_chunk(uint64_t n, int chunk_size) {
+        uint64_t sum = 0;
+        #pragma omp parallel for reduction(+:sum) schedule(guided, chunk_size)
+        for (uint64_t i = 0; i < n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+    ```
+
+__Final Code__
+
+```cpp
+#include <iostream>
+#include <omp.h>
+#include <cstdint>
+
+class Timer {
+public:
+    Timer() {
+        this->reset();
+    }
+
+    void reset() {
+        m_Time = omp_get_wtime();
+    }
+
+    double elapsed() {
+        double now = omp_get_wtime();
+        return now - m_Time;
+    }
+
+    void log(std::string msg) {
+        double time = this->elapsed();
+        std::cout << "[TIMER] " 
+                  << msg << " : " 
+                  << time
+                  << "s" << std::endl;
+    }
+private:
+    double m_Time;
+};
+
+uint64_t sum_all_serial(uint64_t n) {
+    uint64_t sum = 0;
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_static(uint64_t n) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(static)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_static_chunk(uint64_t n, int chunk_size) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(static, chunk_size)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_dynamic(uint64_t n) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(dynamic)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_dynamic_chunk(uint64_t n, int chunk_size) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(dynamic, chunk_size)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_guided(uint64_t n) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(guided)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+uint64_t sum_all_guided_chunk(uint64_t n, int chunk_size) {
+    uint64_t sum = 0;
+    #pragma omp parallel for reduction(+:sum) schedule(guided, chunk_size)
+    for (uint64_t i = 0; i < n; ++i) {
+        sum += i;
+    }
+    return sum;
+}
+
+int main() {
+    uint64_t n = 1e9;
+    Timer timer;
+
+    // Serial Execution
+    timer.reset();
+    sum_all_serial(n);
+    timer.log("Serial execution took");
+
+    // Static Schedule
+    timer.reset();
+    sum_all_static(n);
+    timer.log("Static schedule took");
+
+    // Static Schedule with Chunk Size
+    int chunk_size = 1000;
+    timer.reset();
+    sum_all_static_chunk(n, chunk_size);
+    timer.log("Static schedule with chunk size took");
+
+    // Dynamic Schedule
+    timer.reset();
+    sum_all_dynamic(n);
+    timer.log("Dynamic schedule took");
+
+    // Dynamic Schedule with Chunk Size
+    timer.reset();
+    sum_all_dynamic_chunk(n, chunk_size);
+    timer.log("Dynamic schedule with chunk size took");
+
+    // Guided Schedule
+    timer.reset();
+    sum_all_guided(n);
+    timer.log("Guided schedule took");
+
+    // Guided Schedule with Chunk Size
+    timer.reset();
+    sum_all_guided_chunk(n, chunk_size);
+    timer.log("Guided schedule with chunk size took");
+
+    return 0;
+}
+```
+
+```console
+[TIMER] Serial execution took : 1.17382s
+[TIMER] Static schedule took : 0.160601s
+[TIMER] Static schedule with chunk size took : 0.165052s
+[TIMER] Dynamic schedule took : 10.0197s
+[TIMER] Dynamic schedule with chunk size took : 0.189753s
+[TIMER] Guided schedule took : 0.192321s
+[TIMER] Guided schedule with chunk size took : 0.184942s
+```
